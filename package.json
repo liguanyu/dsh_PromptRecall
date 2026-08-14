@@ -23,15 +23,10 @@
       "platform": "web"
     }
   },
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-typert-protocol": "*",
-    "zod": "*"
-  },
-  "peerDependenciesMeta": {
-    "@deepseek-ai/cordis": { "optional": true },
-    "@deepseek-ai/dsh-typert-protocol": { "optional": true },
-    "zod": { "optional": true }
+  "dependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-typert-protocol": "^0.1.0-rc.6",
+    "zod": "^4.4.3"
   },
   "license": "MIT",
   "files": [
