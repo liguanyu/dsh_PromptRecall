@@ -78,8 +78,12 @@ dsh plugin --profile web add github:<你的用户名>/dsh-prompt-recall
 ```bash
 git clone https://github.com/<你的用户名>/dsh-prompt-recall
 cd dsh-prompt-recall
+pnpm install          # link 安装沿仓库真实路径解析依赖，需先在仓库内安装
 dsh plugin --profile web add .
 ```
+
+本地安装使用 pnpm 的 `link:` 协议（改代码后重启即生效，无需重装）；由于 Node 会解析链接的真实路径，请先 `pnpm install` 一次，让仓库内具备运行时依赖。`github:` 安装无需此步骤（依赖随包装入 profile 树）。
+Local installs use pnpm's `link:` protocol (code edits take effect on restart without reinstalling); because Node resolves the link's real path, run `pnpm install` once so the repository has its runtime dependencies. `github:` installs need no such step (dependencies are installed into the profile tree with the package).
 
 安装后重启 DSH Web（`dsh web`）即可生效；插件成为 web 组合中的一行，随启动自动加载，无需任何手动 define/run 步骤。
 After installation, restart DSH Web (`dsh web`) to activate; the plugin becomes a row of the web composition, loads automatically at boot, and needs no manual define/run steps.
