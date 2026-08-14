@@ -64,31 +64,45 @@ Capacity: the persistent file is capped at roughly 10 MB (oldest complete record
 
 ## 安装 / Installation
 
-前置条件：运行中的 DSH Web GUI 会话。
-Prerequisite: a running DSH Web GUI session.
+前置条件：已安装 `pnpm` 的 DSH 环境（`dsh plugin` 内部转发给 pnpm）。
+Prerequisite: a DSH environment with `pnpm` installed (`dsh plugin` forwards to pnpm internally).
 
-1. 读取本仓库 `plugin/host.js` 与 `plugin/client.js` 全文。
-   Read the full contents of `plugin/host.js` and `plugin/client.js` in this repository.
-2. 在 DSH 会话中调用 `cordis_define` 定义一个 Package，将两个文件内容分别作为 `code.host` 与 `code.client`（同一 pluginId 下可追加新版本）。
-   In the DSH session, call `cordis_define` to define a Package, passing the two files as `code.host` and `code.client` (later versions append to the same pluginId).
-3. 调用 `cordis_run` 激活；如弹出审批请通过。
-   Activate with `cordis_run`; approve the request if prompted.
-4. 历史数据写入 `<DSH 主目录>/.dsh/`；若该目录不存在，先创建：`New-Item -ItemType Directory -Force <home>/.dsh`（Windows）或 `mkdir -p ~/.dsh`（POSIX）。
-   History data is written to `<DSH home>/.dsh/`; if that directory does not exist, create it first: `New-Item -ItemType Directory -Force <home>/.dsh` (Windows) or `mkdir -p ~/.dsh` (POSIX).
+**从 GitHub 安装 / Install from GitHub:**
 
-动态插件属于当前会话与进程：DSH 重启后按上述步骤重新 define/run 即可，历史数据不受影响。
-Dynamic plugins belong to the current session and process: after a DSH restart, just re-define/re-run as above — the history data is unaffected.
+```bash
+dsh plugin --profile web add github:<你的用户名>/dsh-prompt-recall
+```
+
+**本地安装 / Install locally:**
+
+```bash
+git clone https://github.com/<你的用户名>/dsh-prompt-recall
+cd dsh-prompt-recall
+dsh plugin --profile web add .
+```
+
+安装后重启 DSH Web（`dsh web`）即可生效；插件成为 web 组合中的一行，随启动自动加载，无需任何手动 define/run 步骤。
+After installation, restart DSH Web (`dsh web`) to activate; the plugin becomes a row of the web composition, loads automatically at boot, and needs no manual define/run steps.
+
+历史数据写入 DSH 主目录（通常为用户主目录）下的 `.dsh/prompt-history.jsonl`；若该目录不存在，先创建：`New-Item -ItemType Directory -Force <home>/.dsh`（Windows）或 `mkdir -p ~/.dsh`（POSIX）。
+History data is written to `.dsh/prompt-history.jsonl` under the DSH home directory (usually the user's home directory); if that directory does not exist, create it first: `New-Item -ItemType Directory -Force <home>/.dsh` (Windows) or `mkdir -p ~/.dsh` (POSIX).
 
 ## 开发 / Development
 
 目录结构 / Layout:
 
-- `plugin/host.js` — Host 半：JSONL 存储、提交捕获、Client RPC、只读状态工具 `hrec_status`
-  Host half: JSONL storage, submission capture, Client RPC, read-only status tool `hrec_status`
-- `plugin/client.js` — Client 半：按键路由、历史状态机、输入框适配、位置 pill
-  Client half: key routing, history state machine, composer adapter, position pill
-- `test/host.store.test.mjs` — Host 存储逻辑单测
-  Host storage unit tests
+- `lib/index.js` — Host 半：`promptRecall` Remote 服务（JSONL 存储 + inbox 提交捕获）
+  Host half: the `promptRecall` Remote service (JSONL storage + inbox submission capture)
+- `lib/store-core.js` — 纯存储核心（两层历史/折叠/裁剪，零依赖可单测）
+  Pure storage core (two-layer history / folding / trimming, dependency-free and unit-testable)
+- `lib/typert.host.js` — 手写的 typert 宿主面（网关校验与派发）
+  Hand-written typert host face (gateway validation and dispatch)
+- `lib/client.js` — Client 半：按键路由、历史状态机、位置 pill
+  Client half: key routing, history state machine, position pill
+- `cordis.patch.yml` — bundle patch：把插件行插入 web 组合
+  Bundle patch: inserts the plugin row into the web composition
+- `test/store-core.test.mjs` — 存储核心单测（`node --test`）
+  Storage core unit tests (`node --test`)
 
 运行测试 / Run tests:
 
