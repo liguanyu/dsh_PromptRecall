@@ -1,4 +1,4 @@
-# PromptRecall
+# dsh_PromptRecall
 
 仿 Codex 的 DSH Web GUI 输入历史插件：在会话输入框按 `↑`/`↓` 浏览历史 prompt，历史跨会话、跨重启持久保留。
 A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts with `↑`/`↓` in the session composer, with history persisted across conversations and restarts.
@@ -70,14 +70,14 @@ Prerequisite: a DSH environment with `pnpm` installed (`dsh plugin` forwards to 
 **从 GitHub 安装 / Install from GitHub:**
 
 ```bash
-dsh plugin --profile web add github:<你的用户名>/dsh-prompt-recall
+dsh plugin --profile web add github:liguanyu/dsh_PromptRecall
 ```
 
 **本地安装 / Install locally:**
 
 ```bash
-git clone https://github.com/<你的用户名>/dsh-prompt-recall
-cd dsh-prompt-recall
+git clone https://github.com/liguanyu/dsh_PromptRecall
+cd dsh_PromptRecall
 pnpm install          # link 安装沿仓库真实路径解析依赖，需先在仓库内安装
 dsh plugin --profile web add .
 ```

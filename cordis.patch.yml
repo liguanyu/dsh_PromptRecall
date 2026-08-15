@@ -1,5 +1,5 @@
 # dsh-prompt-recall bundle patch: 把输入历史插件行插入 web 组合。
-# 安装：dsh plugin --profile web add <本仓库路径或 github:user/dsh-prompt-recall>
+# 安装：dsh plugin --profile web add <本仓库路径或 github:liguanyu/dsh_PromptRecall>
 # 一行即双面：node 半为 lib/index.js（宿主 Remote 服务），浏览器半为 lib/client.js。
 - insert:
     - id: prompt-recall
