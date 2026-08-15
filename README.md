@@ -56,8 +56,8 @@ Takeover rules: the key target must be the conversation composer; browsing start
 
 ## 数据与隐私 / Data & privacy
 
-历史写入 DSH 主目录（通常为用户主目录）下的 `.dsh/prompt-history.jsonl`，每行一条 JSON 记录；只保存纯文本，不保存图片、mention 绑定或其他附件内容。
-History is written to `.dsh/prompt-history.jsonl` under the DSH home directory (usually the user's home directory), one JSON record per line; only plain text is saved — no images, mention bindings, or other attachment content.
+历史写入 DSH 主目录下的 `prompt-history.jsonl`（即 `$DSH_HOME/prompt-history.jsonl`；未设置 `DSH_HOME` 时默认 `~/.dsh/prompt-history.jsonl`），每行一条 JSON 记录；只保存纯文本，不保存图片、mention 绑定或其他附件内容。
+History is written to `prompt-history.jsonl` under the DSH home directory (`$DSH_HOME/prompt-history.jsonl`; default `~/.dsh/prompt-history.jsonl` when `DSH_HOME` is unset), one JSON record per line; only plain text is saved — no images, mention bindings, or other attachment content.
 
 容量限制：持久文件约 10 MB（超限删除最旧整行，永远保留最新一条）；当前会话的局部召回列表上限 200 条 / 256 KB（从最旧淘汰）。pill 上的 × 可随时清空全部历史。
 Capacity: the persistent file is capped at roughly 10 MB (oldest complete records are dropped, the newest is always kept); the current conversation's local list is capped at 200 entries / 256 KB (oldest evicted). The pill's × clears everything at any time.
@@ -88,8 +88,8 @@ Local installs use pnpm's `link:` protocol (code edits take effect on restart wi
 安装后重启 DSH Web（`dsh web`）即可生效；插件成为 web 组合中的一行，随启动自动加载，无需任何手动 define/run 步骤。
 After installation, restart DSH Web (`dsh web`) to activate; the plugin becomes a row of the web composition, loads automatically at boot, and needs no manual define/run steps.
 
-历史数据写入 DSH 主目录（通常为用户主目录）下的 `.dsh/prompt-history.jsonl`；若该目录不存在，先创建：`New-Item -ItemType Directory -Force <home>/.dsh`（Windows）或 `mkdir -p ~/.dsh`（POSIX）。
-History data is written to `.dsh/prompt-history.jsonl` under the DSH home directory (usually the user's home directory); if that directory does not exist, create it first: `New-Item -ItemType Directory -Force <home>/.dsh` (Windows) or `mkdir -p ~/.dsh` (POSIX).
+历史数据写入 `$DSH_HOME/prompt-history.jsonl`（默认 `~/.dsh/prompt-history.jsonl`）；目录不存在时会在首次写入时自动创建，无需手动准备。
+History data is written to `$DSH_HOME/prompt-history.jsonl` (default `~/.dsh/prompt-history.jsonl`); the directory is created automatically on first write, so no manual setup is needed.
 
 ## 开发 / Development
 

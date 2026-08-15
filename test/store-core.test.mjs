@@ -163,3 +163,56 @@ test('get 越界返回 null', async () => {
   await store.init('/ws', 's1')
   assert.equal(store.getUnified(3), null)
 })
+
+test('init 读失败：保留现有内存状态而不是清空', async () => {
+  let content = ''
+  let failRead = false
+  const io = {
+    read: async () => {
+      if (failRead) throw new Error('transient read failure')
+      return content
+    },
+    write: async (text) => { content = text },
+  }
+  const store = createStore(io)
+  await store.init('/ws', 's1')
+  store.commit('a', { sessionId: 's1' })
+  store.commit('b', { sessionId: 's1' })
+  await store.snapshot().writeQueue
+  assert.equal(store.status().total, 2)
+  // 读开始失败：init 应保留 a/b 而不是清空
+  failRead = true
+  const r = await store.init('/ws', 's2')
+  assert.equal(r.persistentCount, 0)
+  assert.equal(r.localCount, 2)
+  // highWatermark 只在磁盘读取成功时更新（磁盘水位仍为 0），内存记录不受影响
+  assert.equal(r.highWatermarkId, 0)
+  assert.equal(store.getUnified(0).entry.text, 'a')
+  assert.equal(store.getUnified(1).entry.text, 'b')
+})
+
+test('写失败不中断内存 commit 与后续写入', async () => {
+  let content = ''
+  let failWrite = true
+  const io = {
+    read: async () => content,
+    write: async (text) => {
+      if (failWrite) throw new Error('write denied')
+      content = text
+    },
+  }
+  const store = createStore(io)
+  await store.init('/ws', 's1')
+  const e1 = store.commit('first', { sessionId: 's1' })
+  await store.snapshot().writeQueue
+  // 写失败：内存记录仍在，可召回
+  assert.equal(e1.id, 1)
+  assert.equal(store.getUnified(0).entry.text, 'first')
+  assert.equal(content, '')
+  // 恢复后继续提交：正常落盘且 ID 单调
+  failWrite = false
+  const e2 = store.commit('second', { sessionId: 's1' })
+  await store.snapshot().writeQueue
+  assert.equal(e2.id, 2)
+  assert.equal(JSON.parse(content.trim().split('\n')[1]).text, 'second')
+})
