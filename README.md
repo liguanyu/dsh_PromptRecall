@@ -13,6 +13,7 @@ A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts 
 - **位置指示**：输入框上方 pill 显示当前位置（如 `↑ 2/38`）；pill 上的 × 两次点击可清空全部历史。
 - **仅存文本 + 自动裁剪**：只持久化纯文本；相邻完全相同的条目折叠；文件超限时删除最旧整行并保留最新。
 
+
 **↑ recalls, ↓ moves forward**: an empty composer starts browsing from the newest entry; ↓ moves toward newer entries, and moving past the newest one clears the composer and exits browsing.
 **Current conversation first**: returning to a conversation recalls that conversation's own history first; pressing ↑ further walks into other conversations' history.
 **Persistent across conversations and restarts**: a user-level JSONL history with stable monotonic IDs remains recallable after page reloads and restarts.
@@ -27,6 +28,7 @@ A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts 
 进入或切回一个会话时冻结快照：快照只含**其他会话**的记录，本会话的记录播种进局部层，因此统一索引的顺序是 `[其他会话记录 | 本会话记录]`。
 示例：会话 A 依次输入 a、b、c，切到会话 B 输入 e、f，再切回 A 后按 ↑ 的顺序是 `c → b → a → f → e`（当前对话优先，全局兜底）。
 每条记录带**稳定单调 ID**，裁剪只删最旧整行、不重编号；本会话新提交只出现在局部层，因此每条恰好出现一次；局部层相邻且完全相同的条目（文本+会话+附件签名）折叠，持久层保留重复记录。
+
 
 History has two layers: a **persistent layer** (the cross-conversation JSONL file, text only) and a **local layer** (the current conversation's recall list, including Esc-stashed drafts).
 Entering or returning to a conversation freezes a snapshot: the snapshot keeps only **other conversations'** records, while this conversation's records are seeded into the local layer — the unified index order is `[other conversations | this conversation]`.
@@ -44,6 +46,15 @@ Every record carries a **stable monotonic ID**; trimming deletes only the oldest
 | `Esc`（非空草稿） | 清空草稿并存入历史（↑ 可找回） |
 | `Esc`（浏览中） | 退出浏览；草稿为空时不做任何事 |
 
+鼠标操作（非键盘）/ Mouse actions (not keyboard):
+| 操作 | 行为 |
+|---|---|
+| 点击 pill 上的 `×` 两次（3 秒内） | 第一次点击变"确认?"，第二次清空全部历史（含持久文件） |
+
+接管判定：按键目标必须是会话输入框；只有"语义空"草稿（文本、附件、mention 全空）按 ↑ 才进入浏览；浏览中一旦用户改动文本或附件，立即退出接管并作废在途请求；弹窗或命令菜单消费过的按键自动让位。
+
+
+
 | Key | Behavior |
 |---|---|
 | `↑` (empty draft) | Start browsing history from the newest entry |
@@ -53,25 +64,19 @@ Every record carries a **stable monotonic ID**; trimming deletes only the oldest
 | `Esc` (non-empty draft) | Clear the draft and store it in history (recoverable with ↑) |
 | `Esc` (browsing) | Exit browsing; no-op when the draft is empty |
 
-鼠标操作（非键盘）/ Mouse actions (not keyboard):
-
-| 操作 | 行为 |
-|---|---|
-| 点击 pill 上的 `×` 两次（3 秒内） | 第一次点击变"确认?"，第二次清空全部历史（含持久文件） |
-
 | Action | Behavior |
 |---|---|
 | Click the pill's `×` twice (within 3 s) | The first click arms "confirm?", the second clears all history (including the persistent file) |
 
-接管判定：按键目标必须是会话输入框；只有"语义空"草稿（文本、附件、mention 全空）按 ↑ 才进入浏览；浏览中一旦用户改动文本或附件，立即退出接管并作废在途请求；弹窗或命令菜单消费过的按键自动让位。
 Takeover rules: the key target must be the conversation composer; browsing starts with ↑ only on a semantically empty draft (no text, attachments, or mentions); any user edit to the text or attachments while browsing immediately releases the takeover and invalidates in-flight requests; keys already consumed by a popup or command menu are always left alone.
 
 ## 数据与隐私 / Data & privacy
 
 历史写入 DSH 主目录下的 `prompt-history.jsonl`（即 `$DSH_HOME/prompt-history.jsonl`；未设置 `DSH_HOME` 时默认 `~/.dsh/prompt-history.jsonl`），每行一条 JSON 记录；只保存纯文本，不保存图片、mention 绑定或其他附件内容。
-History is written to `prompt-history.jsonl` under the DSH home directory (`$DSH_HOME/prompt-history.jsonl`; default `~/.dsh/prompt-history.jsonl` when `DSH_HOME` is unset), one JSON record per line; only plain text is saved — no images, mention bindings, or other attachment content.
-
 容量限制：持久文件约 10 MB（超限删除最旧整行，永远保留最新一条）；当前会话的局部召回列表上限 200 条 / 256 KB（从最旧淘汰）。pill 上的 × 可随时清空全部历史。
+
+
+History is written to `prompt-history.jsonl` under the DSH home directory (`$DSH_HOME/prompt-history.jsonl`; default `~/.dsh/prompt-history.jsonl` when `DSH_HOME` is unset), one JSON record per line; only plain text is saved — no images, mention bindings, or other attachment content.
 Capacity: the persistent file is capped at roughly 10 MB (oldest complete records are dropped, the newest is always kept); the current conversation's local list is capped at 200 entries / 256 KB (oldest evicted). The pill's × clears everything at any time.
 
 ## 安装 / Installation
@@ -98,6 +103,9 @@ dsh plugin --profile web add .
 安装后重启 DSH Web（`dsh web`）即可生效；插件成为 web 组合中的一行，随启动自动加载，无需任何手动 define/run 步骤。
 
 历史数据写入 `$DSH_HOME/prompt-history.jsonl`（默认 `~/.dsh/prompt-history.jsonl`）；目录不存在时会在首次写入时自动创建，无需手动准备。
+
+
+
 
 Prerequisite: a DSH environment with `pnpm` installed (`dsh plugin` forwards to pnpm internally).
 
@@ -132,6 +140,7 @@ History data is written to `$DSH_HOME/prompt-history.jsonl` (default `~/.dsh/pro
 - `lib/client.js` — Client 半：按键路由、历史状态机、位置 pill
 - `cordis.patch.yml` — bundle patch：把插件行插入 web 组合
 - `test/store-core.test.mjs` — 存储核心单测（`node --test`）
+
 
 - `lib/index.js` — Host half: the `promptRecall` Remote service (JSONL storage + inbox submission capture)
 - `lib/store-core.js` — Pure storage core (two-layer history / folding / trimming, dependency-free and unit-testable)
