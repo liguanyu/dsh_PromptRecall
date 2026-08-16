@@ -14,25 +14,31 @@ A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts 
 - **仅存文本 + 自动裁剪**：只持久化纯文本；相邻完全相同的条目折叠；文件超限时删除最旧整行并保留最新。
 
 
-**↑ recalls, ↓ moves forward**: an empty composer starts browsing from the newest entry; ↓ moves toward newer entries, and moving past the newest one clears the composer and exits browsing.
-**Current conversation first**: returning to a conversation recalls that conversation's own history first; pressing ↑ further walks into other conversations' history.
-**Persistent across conversations and restarts**: a user-level JSONL history with stable monotonic IDs remains recallable after page reloads and restarts.
-**Safe key routing**: with a non-empty draft, a caret in the middle of multi-line text, an active selection, or an open popup, arrow keys are handed back to the editor and never overwrite a draft.
-**Esc draft insurance**: clearing an unsent non-empty draft stores it in the history (text only) so ↑ can bring it back.
-**Position indicator**: a pill above the composer shows the current position (e.g. `↑ 2/38`); clicking its × twice clears all history.
-**Text-only storage with auto-trim**: only plain text is persisted; adjacent identical entries are folded; oversized files drop the oldest complete records while keeping the newest.
+- **↑ recalls, ↓ moves forward**: an empty composer starts browsing from the newest entry; ↓ moves toward newer entries, and moving past the newest one clears the composer and exits browsing.
+- **Current conversation first**: returning to a conversation recalls that conversation's own history first; pressing ↑ further walks into other conversations' history.
+- **Persistent across conversations and restarts**: a user-level JSONL history with stable monotonic IDs remains recallable after page reloads and restarts.
+- **Safe key routing**: with a non-empty draft, a caret in the middle of multi-line text, an active selection, or an open popup, arrow keys are handed back to the editor and never overwrite a draft.
+- **Esc draft insurance**: clearing an unsent non-empty draft stores it in the history (text only) so ↑ can bring it back.
+- **Position indicator**: a pill above the composer shows the current position (e.g. `↑ 2/38`); clicking its × twice clears all history.
+- **Text-only storage with auto-trim**: only plain text is persisted; adjacent identical entries are folded; oversized files drop the oldest complete records while keeping the newest.
 
 ## 设计 / Design
 
 历史分两层：**持久层**（跨会话 JSONL 文件，只存文本）与**局部层**（当前会话的召回列表，含 Esc 暂存草稿）。
+
 进入或切回一个会话时冻结快照：快照只含**其他会话**的记录，本会话的记录播种进局部层，因此统一索引的顺序是 `[其他会话记录 | 本会话记录]`。
+
 示例：会话 A 依次输入 a、b、c，切到会话 B 输入 e、f，再切回 A 后按 ↑ 的顺序是 `c → b → a → f → e`（当前对话优先，全局兜底）。
+
 每条记录带**稳定单调 ID**，裁剪只删最旧整行、不重编号；本会话新提交只出现在局部层，因此每条恰好出现一次；局部层相邻且完全相同的条目（文本+会话+附件签名）折叠，持久层保留重复记录。
 
 
 History has two layers: a **persistent layer** (the cross-conversation JSONL file, text only) and a **local layer** (the current conversation's recall list, including Esc-stashed drafts).
+
 Entering or returning to a conversation freezes a snapshot: the snapshot keeps only **other conversations'** records, while this conversation's records are seeded into the local layer — the unified index order is `[other conversations | this conversation]`.
+
 Example: conversation A submits a, b, c; conversation B submits e, f; back in A, ↑ recalls `c → b → a → f → e` (current conversation first, global history as fallback).
+
 Every record carries a **stable monotonic ID**; trimming deletes only the oldest complete records and never renumbers. New submissions in the current conversation appear only in the local layer, so every entry appears exactly once. Adjacent identical entries in the local layer (text + conversation + attachment signature) are folded, while the persistent layer keeps duplicates.
 
 ## 键位与交互逻辑 / Keybindings & interaction logic
@@ -73,10 +79,12 @@ Takeover rules: the key target must be the conversation composer; browsing start
 ## 数据与隐私 / Data & privacy
 
 历史写入 DSH 主目录下的 `prompt-history.jsonl`（即 `$DSH_HOME/prompt-history.jsonl`；未设置 `DSH_HOME` 时默认 `~/.dsh/prompt-history.jsonl`），每行一条 JSON 记录；只保存纯文本，不保存图片、mention 绑定或其他附件内容。
+
 容量限制：持久文件约 10 MB（超限删除最旧整行，永远保留最新一条）；当前会话的局部召回列表上限 200 条 / 256 KB（从最旧淘汰）。pill 上的 × 可随时清空全部历史。
 
 
 History is written to `prompt-history.jsonl` under the DSH home directory (`$DSH_HOME/prompt-history.jsonl`; default `~/.dsh/prompt-history.jsonl` when `DSH_HOME` is unset), one JSON record per line; only plain text is saved — no images, mention bindings, or other attachment content.
+
 Capacity: the persistent file is capped at roughly 10 MB (oldest complete records are dropped, the newest is always kept); the current conversation's local list is capped at 200 entries / 256 KB (oldest evicted). The pill's × clears everything at any time.
 
 ## 安装 / Installation
@@ -154,13 +162,3 @@ History data is written to `$DSH_HOME/prompt-history.jsonl` (default `~/.dsh/pro
 ```text
 node --test
 ```
-
-## 局限与路线 / Limitations & roadmap
-
-- 目前只持久化纯文本；图片、mention、大粘贴的富恢复属于后续路线。
-- 历史作用域目前为全局；按工作区/会话隔离的可选作用域、读/写/清理独立开关属于后续路线。
-- Ctrl+R 反向搜索、大文件分批读取属于后续路线。
-
-- Currently only plain text is persisted; rich recovery of images, mentions, and large pastes is on the roadmap.
-- History scope is currently global; optional workspace/agent scoping and separate read/write/clear controls are on the roadmap.
-- Ctrl+R reverse search and batched reads for very large files are on the roadmap.
