@@ -9,6 +9,7 @@ A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts 
 - **当前对话优先**：回到一个对话时，先召回该对话自己的历史，继续按 ↑ 才进入其他对话的历史。
 - **跨会话、跨重启持久**：用户级 JSONL 全局历史，稳定单调 ID，刷新页面或重启后仍可召回。
 - **安全的按键路由**：非空草稿、多行正文中间、有选区、弹窗打开时，方向键一律交还编辑器，绝不误伤草稿。
+- **浏览时不弹触发菜单**：历史浏览期间主动收起 `/` 命令、skill、`@` 引用候选面板，面板不会抢走 ↑/↓；一旦编辑草稿，浏览让位、面板立即恢复正常。
 - **Esc 草稿保险**：清空未发送的非空草稿时把它存入历史（仅文本），按 ↑ 可找回。
 - **位置指示**：输入框上方 pill 显示当前位置（如 `↑ 2/38`）；pill 上的 × 两次点击可清空全部历史。
 - **仅存文本 + 自动裁剪**：只持久化纯文本；相邻完全相同的条目折叠；文件超限时删除最旧整行并保留最新。
@@ -18,6 +19,7 @@ A Codex-style input-history plugin for the DSH Web GUI: browse previous prompts 
 - **Current conversation first**: returning to a conversation recalls that conversation's own history first; pressing ↑ further walks into other conversations' history.
 - **Persistent across conversations and restarts**: a user-level JSONL history with stable monotonic IDs remains recallable after page reloads and restarts.
 - **Safe key routing**: with a non-empty draft, a caret in the middle of multi-line text, an active selection, or an open popup, arrow keys are handed back to the editor and never overwrite a draft.
+- **No trigger menu while browsing**: history browsing actively dismisses the `/` command, skill, and `@` reference candidate menus so they cannot capture ↑/↓; editing the draft ends browsing and restores them immediately.
 - **Esc draft insurance**: clearing an unsent non-empty draft stores it in the history (text only) so ↑ can bring it back.
 - **Position indicator**: a pill above the composer shows the current position (e.g. `↑ 2/38`); clicking its × twice clears all history.
 - **Text-only storage with auto-trim**: only plain text is persisted; adjacent identical entries are folded; oversized files drop the oldest complete records while keeping the newest.
@@ -49,7 +51,8 @@ Every record carries a **stable monotonic ID**; trimming deletes only the oldest
 | `↑` / `↓`（浏览中） | 向旧 / 向新移动；最旧处不回绕 |
 | `↓`（最新项再按） | 清空输入框并退出浏览 |
 | `↑`/`↓`（非空草稿、正文中间、有选区、弹窗打开） | 交还编辑器，只移动光标/候选 |
-| `Esc`（非空草稿） | 清空草稿并存入历史（↑ 可找回） |
+| `↑`/`↓`（浏览中，召回文本以 `/`、`@` 开头） | 触发菜单被抑制：继续回溯历史，不弹候选面板 |
+| `Esc`（非空草稿） | 清空草稿并存入历史（↑ 可找回）；刚召回的条目已在历史里，不再重复记录 |
 | `Esc`（浏览中） | 退出浏览；草稿为空时不做任何事 |
 
 鼠标操作（非键盘）/ Mouse actions (not keyboard):
@@ -57,7 +60,7 @@ Every record carries a **stable monotonic ID**; trimming deletes only the oldest
 |---|---|
 | 点击 pill 上的 `×` 两次（3 秒内） | 第一次点击变"确认?"，第二次清空全部历史（含持久文件） |
 
-接管判定：按键目标必须是会话输入框；只有"语义空"草稿（文本、附件、mention 全空）按 ↑ 才进入浏览；浏览中一旦用户改动文本或附件，立即退出接管并作废在途请求；弹窗或命令菜单消费过的按键自动让位。
+接管判定：按键目标必须是会话输入框；只有"语义空"草稿（文本、附件、mention 全空）按 ↑ 才进入浏览；浏览中一旦用户改动文本或附件，立即退出接管并作废在途请求；弹窗或命令菜单消费过的按键自动让位。优先级上**历史浏览高于触发菜单**：浏览期间 `/` 命令、skill、`@` 引用菜单被主动收起（避免刚召回的 `/...`、`@...` 弹面板抢走 ↑/↓），用户一编辑草稿即解除抑制、菜单恢复原有行为。
 
 
 
@@ -67,14 +70,15 @@ Every record carries a **stable monotonic ID**; trimming deletes only the oldest
 | `↑` / `↓` (browsing) | Move older / newer; no wrap at the oldest end |
 | `↓` (past the newest) | Clear the composer and exit browsing |
 | `↑`/`↓` (non-empty draft, mid-text, selection, popup open) | Handed back to the editor: move the caret / candidates only |
-| `Esc` (non-empty draft) | Clear the draft and store it in history (recoverable with ↑) |
+| `↑`/`↓` (browsing, recalled text starts with `/` or `@`) | Trigger menus are suppressed: history keeps the arrow keys and no candidate panel appears |
+| `Esc` (non-empty draft) | Clear the draft and store it in history (recoverable with ↑); a just-recalled entry is already in history and is not recorded twice |
 | `Esc` (browsing) | Exit browsing; no-op when the draft is empty |
 
 | Action | Behavior |
 |---|---|
 | Click the pill's `×` twice (within 3 s) | The first click arms "confirm?", the second clears all history (including the persistent file) |
 
-Takeover rules: the key target must be the conversation composer; browsing starts with ↑ only on a semantically empty draft (no text, attachments, or mentions); any user edit to the text or attachments while browsing immediately releases the takeover and invalidates in-flight requests; keys already consumed by a popup or command menu are always left alone.
+Takeover rules: the key target must be the conversation composer; browsing starts with ↑ only on a semantically empty draft (no text, attachments, or mentions); any user edit to the text or attachments while browsing immediately releases the takeover and invalidates in-flight requests; keys already consumed by a popup or command menu are always left alone. On priority, **history browsing outranks the trigger menus**: while browsing, the `/` command, skill, and `@` reference menus are actively dismissed (so a recalled `/...` or `@...` cannot pop a panel and steal ↑/↓), and editing the draft releases that suppression and restores normal menu behavior.
 
 ## 数据与隐私 / Data & privacy
 
