@@ -1,7 +1,7 @@
 {
   "name": "dsh-prompt-recall",
   "description": "Codex-style up/down input-history recall for the DeepSeek Harness web GUI",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
