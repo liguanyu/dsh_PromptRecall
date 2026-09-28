@@ -152,6 +152,7 @@ History data is written to `$DSH_HOME/prompt-history.jsonl` (default `~/.dsh/pro
 - `lib/client.js` — Client 半：按键路由、历史状态机、位置 pill
 - `cordis.patch.yml` — bundle patch：把插件行插入 web 组合
 - `test/store-core.test.mjs` — 存储核心单测（`node --test`）
+- `test/typert-contract.test.mjs` — TYPERT 契约单测：schema/codec 的 `create()` 工厂与两面一致性
 
 
 - `lib/index.js` — Host half: the `promptRecall` Remote service (JSONL storage + inbox submission capture)
@@ -160,6 +161,18 @@ History data is written to `$DSH_HOME/prompt-history.jsonl` (default `~/.dsh/pro
 - `lib/client.js` — Client half: key routing, history state machine, position pill
 - `cordis.patch.yml` — Bundle patch: inserts the plugin row into the web composition
 - `test/store-core.test.mjs` — Storage core unit tests (`node --test`)
+- `test/typert-contract.test.mjs` — TYPERT contract tests: the `create()` factories on schemas/codecs and both-face agreement
+
+DSH 兼容性：本插件的 TYPERT 清单面向 DSH ≥ 0.1.7 的**惰性工厂契约**——`TYPERT.schemas` 的每个条目与每个
+strict codec（参数与 result）都必须提供 `create()`，由注册表缓存、网关在边界处调用 `codec.create().parse()`。
+升级 DSH 后若启动报 `… has no create() factory`，就是该契约发生了漂移，改完请跑 `node --test`
+（`test/typert-contract.test.mjs` 会先失败）。
+
+DSH compatibility: this plugin's TYPERT manifest targets the DSH ≥ 0.1.7 **lazy-factory contract** — every
+`TYPERT.schemas` entry and every strict codec (parameter and result) must provide `create()`; the registry caches
+its product and the gateway calls `codec.create().parse()` at the boundary. If a DSH upgrade reports
+`… has no create() factory` at boot, that contract drifted; after fixing, run `node --test`
+(`test/typert-contract.test.mjs` fails first).
 
 运行测试 / Run tests:
 
